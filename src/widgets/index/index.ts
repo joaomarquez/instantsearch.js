@@ -149,6 +149,8 @@ const index = (props: IndexProps): Index => {
   let localParent: Index | null = null;
   let helper: Helper | null = null;
   let derivedHelper: DerivedHelper | null = null;
+  // TODO: change name & format, it's a map of indexId <-> { lastResults } now
+  let derivedHelpers: { [indexId: string]: Pick<DerivedHelper, 'lastResults'> } | null = null;
 
   const createURL = (nextState: SearchParameters) =>
     localInstantSearchInstance!._createURL!({
@@ -281,10 +283,11 @@ const index = (props: IndexProps): Index => {
       return this;
     },
 
-    init({ instantSearchInstance, parent, uiState }: IndexInitOptions) {
+    init({ instantSearchInstance, parent, uiState, derivedHelpers: injectedDerivedHelpers }: IndexInitOptions) {
       localInstantSearchInstance = instantSearchInstance;
       localParent = parent;
       localUiState = uiState[indexId] || {};
+      derivedHelpers = injectedDerivedHelpers;
 
       // The `mainHelper` is already defined at this point. The instance is created
       // inside InstantSearch at the `start` method, which occurs before the `init`
@@ -327,6 +330,7 @@ const index = (props: IndexProps): Index => {
       derivedHelper = mainHelper.derive(() =>
         mergeSearchParameters(...resolveSearchParameters(this))
       );
+      derivedHelper.lastResults = derivedHelpers?.[indexId]?.lastResults ?? null;
 
       // Subscribe to the Helper state changes for the page before widgets
       // are initialized. This behavior mimics the original one of the Helper.
@@ -540,6 +544,7 @@ See https://www.algolia.com/doc/guides/building-search-ui/widgets/customize-an-e
             state: helper!.state,
             templatesConfig: instantSearchInstance.templatesConfig,
             createURL,
+            derivedHelpers,
           });
         }
       });
