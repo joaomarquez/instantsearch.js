@@ -150,7 +150,9 @@ const index = (props: IndexProps): Index => {
   let helper: Helper | null = null;
   let derivedHelper: DerivedHelper | null = null;
   // TODO: change name & format, it's a map of indexId <-> { lastResults } now
-  let derivedHelpers: { [indexId: string]: Pick<DerivedHelper, 'lastResults'> } | null = null;
+  let derivedHelpers: {
+    [indexId: string]: Pick<DerivedHelper, 'lastResults'>;
+  } | null = null;
 
   const createURL = (nextState: SearchParameters) =>
     localInstantSearchInstance!._createURL!({
@@ -228,6 +230,7 @@ const index = (props: IndexProps): Index => {
               state: helper!.state,
               templatesConfig: localInstantSearchInstance.templatesConfig,
               createURL,
+              derivedHelpers,
             });
           }
         });
@@ -283,7 +286,12 @@ const index = (props: IndexProps): Index => {
       return this;
     },
 
-    init({ instantSearchInstance, parent, uiState, derivedHelpers: injectedDerivedHelpers }: IndexInitOptions) {
+    init({
+      instantSearchInstance,
+      parent,
+      uiState,
+      derivedHelpers: injectedDerivedHelpers,
+    }: IndexInitOptions) {
       localInstantSearchInstance = instantSearchInstance;
       localParent = parent;
       localUiState = uiState[indexId] || {};
@@ -330,7 +338,8 @@ const index = (props: IndexProps): Index => {
       derivedHelper = mainHelper.derive(() =>
         mergeSearchParameters(...resolveSearchParameters(this))
       );
-      derivedHelper.lastResults = derivedHelpers?.[indexId]?.lastResults ?? null;
+      derivedHelper.lastResults =
+        derivedHelpers?.[indexId]?.lastResults ?? null;
 
       // Subscribe to the Helper state changes for the page before widgets
       // are initialized. This behavior mimics the original one of the Helper.
