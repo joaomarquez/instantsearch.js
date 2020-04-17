@@ -153,10 +153,6 @@ const index = (props: IndexProps): Index => {
   let localParent: Index | null = null;
   let helper: Helper | null = null;
   let derivedHelper: DerivedHelper | null = null;
-  // TODO: change name & format, it's a map of indexId <-> { lastResults } now
-  let derivedHelpers: {
-    [indexId: string]: Pick<DerivedHelper, 'lastResults'>;
-  } | null = null;
 
   const createURL = (nextState: SearchParameters) =>
     localInstantSearchInstance!._createURL!({
@@ -234,7 +230,6 @@ const index = (props: IndexProps): Index => {
               state: helper!.state,
               templatesConfig: localInstantSearchInstance.templatesConfig,
               createURL,
-              derivedHelpers,
             });
           }
         });
@@ -290,16 +285,10 @@ const index = (props: IndexProps): Index => {
       return this;
     },
 
-    init({
-      instantSearchInstance,
-      parent,
-      uiState,
-      derivedHelpers: injectedDerivedHelpers,
-    }: IndexInitOptions) {
+    init({ instantSearchInstance, parent, uiState }: IndexInitOptions) {
       localInstantSearchInstance = instantSearchInstance;
       localParent = parent;
       localUiState = uiState[indexId] || {};
-      derivedHelpers = injectedDerivedHelpers;
 
       // The `mainHelper` is already defined at this point. The instance is created
       // inside InstantSearch at the `start` method, which occurs before the `init`
@@ -357,8 +346,6 @@ const index = (props: IndexProps): Index => {
       derivedHelper = mainHelper.derive(() =>
         mergeSearchParameters(...resolveSearchParameters(this))
       );
-      derivedHelper.lastResults =
-        derivedHelpers?.[indexId]?.lastResults ?? null;
 
       // Subscribe to the Helper state changes for the page before widgets
       // are initialized. This behavior mimics the original one of the Helper.
@@ -405,7 +392,6 @@ const index = (props: IndexProps): Index => {
             state: helper!.state,
             templatesConfig: instantSearchInstance.templatesConfig,
             createURL,
-            derivedHelpers,
           });
         }
       });
@@ -417,6 +403,10 @@ const index = (props: IndexProps): Index => {
       // configuration of the widget is pushed in the URL. That's what we want to avoid.
       // https://github.com/algolia/instantsearch.js/pull/994/commits/4a672ae3fd78809e213de0368549ef12e9dc9454
       helper.on('change', ({ state }) => {
+        if (!instantSearchInstance.started) {
+          return;
+        }
+
         localUiState = getLocalWidgetsState(localWidgets, {
           searchParameters: state,
           helper: helper!,
